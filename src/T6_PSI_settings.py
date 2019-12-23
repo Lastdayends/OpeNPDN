@@ -49,7 +49,7 @@ import numpy as np
 
 class T6_PSI_settings():
 
-    def __init__(self,db,ODB_LOC,checkpoint_dir):
+    def __init__(self,db,ODB_LOC,cfg_file,checkpoint_dir):
         
         self.ODB_loc = ODB_LOC
         tech = db.getTech()
@@ -57,7 +57,7 @@ class T6_PSI_settings():
         layers = tech.getLayers()
 
         self.work_dir = "./"
-        self.temp_tcl_file =  self.work_dir + "input/PDN.cfg"
+        self.temp_tcl_file =  cfg_file
         self.temp_json_file = self.work_dir + "input/tech_spec.json"
         self.conf_json_file = self.work_dir + "input/tool_config.json"
         self.template_file = self.work_dir + "templates"
@@ -358,17 +358,18 @@ class metal_layer():
 
         
 if __name__ == '__main__':
-    if(len(sys.argv) != 4 and len(sys.argv) != 5):
-        print("ERROR: Settings requires either 4 or 5 input arguments")
+    if(len(sys.argv) != 5 and len(sys.argv) != 6):
+        print("ERROR: Settings requires either 5 or 6 input arguments")
         sys.exit(-1)
     odb_loc = sys.argv[1]  
     checkpoint_dir = sys.argv[2]  
-    mode = sys.argv[3]  
+    cfg_file = sys.argv[3]  
+    mode = sys.argv[4]  
     if mode == 'TRAIN':
-        if len(sys.argv) != 5:
+        if len(sys.argv) != 6:
             print("ERROR: Training mode requires atleast 4 input arguments")
         print("OpeNPDN Training Mode:")
-        lef_list = sys.argv[4]  
+        lef_list = sys.argv[5]  
         lef_files = lef_list.split();
         for i in range(len(lef_files)):
             if not os.path.isfile(lef_files[i]):
@@ -394,7 +395,7 @@ if __name__ == '__main__':
         print("MODE not recognize, possible inputs are \'TRAIN\' or \'INFERENCE\'")
         exit(-1)
 
-    obj = T6_PSI_settings(db,odb_loc,checkpoint_dir)
+    obj = T6_PSI_settings(db,odb_loc,cfg_file,checkpoint_dir)
     filehandler = open(obj.work_dir+"work/T6_PSI_settings.obj","wb")
     pickle.dump(obj,filehandler)
     filehandler.close()

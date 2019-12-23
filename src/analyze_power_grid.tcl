@@ -29,9 +29,6 @@
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 sta::define_cmd_args "analyze_power_grid" {
-    [-OPDN_DIR OPDN_DIR]\
-    [-opendbpy opendbpy]\
-    [-help]\
     [-verbose]}
 
 # Put helper functions in a separate namespace so they are not visible
@@ -39,35 +36,41 @@ sta::define_cmd_args "analyze_power_grid" {
 namespace eval openpdn {
     variable db
     variable opendbpy
-    variable checkpoints
     variable OPDN_DIR
+    variable TEMPALTE_CFG
     
     #This file contains procedures that are used for PDN generation
     proc file_exists {filename} {
 	return [expr {([file exists $filename]) && ([file size $filename] > 0)}]
     }
-    proc init {opendb_db openpdn_dir opendb_opendbpy openpdn_checkpoints} {
+    proc init {opendb_db} {
         variable db
-        variable opendbpy
-        variable checkpoints
         variable OPDN_DIR
+        variable opendbpy
+        variable TEMPALTE_CFG
         
-        set opendbpy $opendb_opendbpy
+        set opendbpy $::env(OPDN_OPENDBPY)
         if {![file_exists $opendbpy]} {
-	    sta::sta_error "File $opendbpy does not exist, or exists but empty"
+	        sta::sta_error "File for opendbpy.py \"$opendbpy\" does not exist, or exists but empty"
+        }
+        set TEMPALTE_CFG $::env(TEMPLATE_PGA_CFG)
+        if {![file_exists $TEMPALTE_CFG]} {
+	        sta::sta_error "File for template_pga.cfg \"$TEMPALTE_CFG\" does not exist, or exists but empty"
+        }
+        set OPDN_DIR $::env(OPDN_SRC)
+        if {![file isDirectory ${OPDN_DIR}]} {
+	        sta::sta_error "Directory location for OpeNPDN \"$OPDN_DIR\" does not exist, or not defined"
         }
         set  db $opendb_db 
-        set checkpoints $openpdn_checkpoints
-        set OPDN_DIR $openpdn_dir
     }
 
 
     proc openpdn { verbose } {
         variable db
-        variable opendbpy
-        variable checkpoints
         variable OPDN_DIR
-
+        variable opendbpy
+        variable TEMPALTE_CFG
+        
         file mkdir ${OPDN_DIR}/work
         write_db "${OPDN_DIR}/work/PDN.db"
         
@@ -84,15 +87,14 @@ namespace eval openpdn {
         	report_power -instance $y -digits 10 >> ./work/power_instance.rpt
         	}
         
-        set OPDN_ODB_LOC "${opendbpy}"
         set OPDN_MODE "INFERENCE"
         
 	    if {$verbose} {
 	        puts "Creating required templates"
 	    }
-        exec python3 src/T6_PSI_settings.py "${OPDN_ODB_LOC}" "${checkpoints}" "${OPDN_MODE}"
+        exec python src/T6_PSI_settings.py "${opendbpy}" "" "${TEMPALTE_CFG}" "${OPDN_MODE}"
         file mkdir templates
-        exec python3 src/create_template.py
+        exec python src/create_template.py
         
 	    if {$verbose} {
 	        puts "Generating IR map and report"
@@ -109,32 +111,18 @@ namespace eval openpdn {
 }
 
 proc analyze_power_grid { args } {
-    sta::parse_key_args "openpdn" args \
-    keys {-OPDN_DIR -opendbpy} \
-    flags {-help -verbose}
+    sta::parse_key_args "analyze_power_grid" args \
+    keys {} \
+    flags {-verbose}
 
-    if [info exists flags(-help)] {
-        puts "Usage: openpdn -OPDN_DIR <OpeNPDN path> -opendbpy <opendbpy.py path> "
-        return 0
-    }
-    set OPDN_DIR ""
-    if [info exists keys(-OPDN_DIR)] {
-        set OPDN_DIR $keys(-OPDN_DIR)
-    } else {
-        sta::sta_error "no -OPDN_DIR specified."
-    }
-    set opendbpy ""
-    if [info exists keys(-opendbpy)] {
-        set opendbpy $keys(-opendbpy)
-    } else {
-        sta::sta_error "no -opendbpy specified."
-    }
-    set checkpoints ""
-
+   # if [info exists flags(-help)] {
+   #     puts "Usage: openpdn -OPDN_DIR <OpeNPDN path> -opendbpy <opendbpy.py path> "
+   #     return 0
+   # }
     set verbose [info exists flags(-verbose)]
 
     sta::check_argc_eq0 "analyze_power_grid" $args
     set db [ord::get_db]
-    openpdn::init  $db $OPDN_DIR $opendbpy $checkpoints
+    openpdn::init  $db
     openpdn::openpdn  $verbose
 }
