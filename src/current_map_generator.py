@@ -233,8 +233,8 @@ def main():
 
     power_rep = read_power_report(power_file)
     power_map = create_power_map(settings_obj,db,power_rep)
-    power_map = power_map *100
-    print("WARNING: currents are scaled internally by a factor of 100")
+    power_map = power_map# *100
+    #print("WARNING: currents are scaled internally by a factor of 100")
     if congestion_enabled == 1:
         congest_map = create_congest_map(settings_obj,congest_file,cell_data)
     filtered_map = ndimage.uniform_filter(power_map, size=20, mode='mirror')

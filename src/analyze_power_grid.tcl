@@ -49,16 +49,16 @@ namespace eval openpdn {
         variable opendbpy
         variable TEMPALTE_CFG
         
-        set opendbpy $::env(OPDN_OPENDBPY)
+        set opendbpy [file normalize $::env(OPDN_OPENDBPY)]
         if {![file_exists $opendbpy]} {
 	        sta::sta_error "File for opendbpy.py \"$opendbpy\" does not exist, or exists but empty"
         }
-        set TEMPALTE_CFG $::env(TEMPLATE_PGA_CFG)
+        set TEMPALTE_CFG [file normalize $::env(TEMPLATE_PGA_CFG)]
         if {![file_exists $TEMPALTE_CFG]} {
 	        sta::sta_error "File for template_pga.cfg \"$TEMPALTE_CFG\" does not exist, or exists but empty"
         }
-        set OPDN_DIR $::env(OPDN_SRC)
-        if {![file isDirectory ${OPDN_DIR}]} {
+        set OPDN_DIR [file normalize $::env(OPDN_SRC)]
+        if {![file isdirectory ${OPDN_DIR}]} {
 	        sta::sta_error "Directory location for OpeNPDN \"$OPDN_DIR\" does not exist, or not defined"
         }
         set  db $opendb_db 
@@ -92,15 +92,15 @@ namespace eval openpdn {
 	    if {$verbose} {
 	        puts "Creating required templates"
 	    }
-        exec python src/T6_PSI_settings.py "${opendbpy}" "" "${TEMPALTE_CFG}" "${OPDN_MODE}"
+        exec python3 src/T6_PSI_settings.py "${opendbpy}" "" "${TEMPALTE_CFG}" "${OPDN_MODE}"
         file mkdir templates
-        exec python src/create_template.py
+        exec python3 src/create_template.py
         
 	    if {$verbose} {
 	        puts "Generating IR map and report"
 	    }
-        exec python src/current_map_generator.py work/power_instance.rpt $openpdn_congestion_enable
-        exec python src/IR_map_generator.py
+        exec python3 src/current_map_generator.py work/power_instance.rpt $openpdn_congestion_enable
+        exec python3 src/IR_map_generator.py
         
         puts "Results stored in ${OPDN_DIR}/output"
         file delete -force -- ${OPDN_DIR}/work
